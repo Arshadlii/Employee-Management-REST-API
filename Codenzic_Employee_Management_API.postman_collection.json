@@ -1,0 +1,473 @@
+{
+  "info": {
+    "_postman_id": "7d40d5d8-8e10-4a0f-9b54-codenzicemployee",
+    "name": "Codenzic Employee Management API",
+    "description": "End-to-end tests for the Codenzic Employee Management REST API. Run requests in order. Set baseUrl to the running Spring Boot API, normally http://localhost:8080.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "employeeId",
+      "value": ""
+    },
+    {
+      "key": "employeeEmail",
+      "value": ""
+    },
+    {
+      "key": "missingId",
+      "value": "999999"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Create employee (201)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Arshad\",\n  \"lastName\": \"Ali\",\n  \"email\": \"{{employeeEmail}}\",\n  \"department\": \"Engineering\",\n  \"salary\": 35000.0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Creates a unique email for repeatable test runs and saves the generated employee ID."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const email = \"arshad.\" + Date.now() + \"@example.com\";",
+              "pm.collectionVariables.set(\"employeeEmail\", email);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 201 Created\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"Response contains employee fields\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body).to.have.property(\"id\");",
+              "    pm.expect(body.firstName).to.eql(\"Arshad\");",
+              "    pm.expect(body.email).to.eql(pm.collectionVariables.get(\"employeeEmail\"));",
+              "});",
+              "if (pm.response.code === 201) {",
+              "    const body = pm.response.json();",
+              "    pm.collectionVariables.set(\"employeeId\", body.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Get all employees (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Response is an array\", function () { pm.expect(pm.response.json()).to.be.an(\"array\"); });",
+              "pm.test(\"Created employee appears in list\", function () {",
+              "    const id = Number(pm.collectionVariables.get(\"employeeId\"));",
+              "    const rows = pm.response.json();",
+              "    pm.expect(rows.some(e => Number(e.id) === id)).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Get employee by ID (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees/{{employeeId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees",
+            "{{employeeId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Returned ID matches saved ID\", function () {",
+              "    pm.expect(String(pm.response.json().id)).to.eql(String(pm.collectionVariables.get(\"employeeId\")));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Update employee (200)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees/{{employeeId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees",
+            "{{employeeId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Arshad\",\n  \"lastName\": \"Ali\",\n  \"email\": \"{{employeeEmail}}\",\n  \"department\": \"Software Engineering\",\n  \"salary\": 40000.0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Updated values are returned\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.department).to.eql(\"Software Engineering\");",
+              "    pm.expect(Number(body.salary)).to.eql(40000);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Duplicate email rejected (409)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Duplicate\",\n  \"lastName\": \"Email\",\n  \"email\": \"{{employeeEmail}}\",\n  \"department\": \"QA\",\n  \"salary\": 25000.0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 409 Conflict\", function () { pm.response.to.have.status(409); });",
+              "pm.test(\"Structured error response is returned\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body).to.have.property(\"status\", 409);",
+              "    pm.expect(body).to.have.property(\"path\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Validation failure: blank name and invalid email (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \" \",\n  \"lastName\": \"\",\n  \"email\": \"not-an-email\",\n  \"department\": \"Engineering\",\n  \"salary\": -1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 400 Bad Request\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Validation errors are included\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body).to.have.property(\"validationErrors\");",
+              "    pm.expect(body.validationErrors).to.be.an(\"object\");",
+              "    pm.expect(Object.keys(body.validationErrors).length).to.be.above(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Missing employee ID (404)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees/{{missingId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees",
+            "{{missingId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 404 Not Found\", function () { pm.response.to.have.status(404); });",
+              "pm.test(\"Error response contains expected fields\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body).to.have.property(\"status\", 404);",
+              "    pm.expect(body).to.have.property(\"message\");",
+              "    pm.expect(body).to.have.property(\"path\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Malformed JSON (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"firstName\":",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 400 Bad Request\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Malformed JSON does not expose internals\", function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body).to.have.property(\"status\", 400);",
+              "    pm.expect(body.message).to.not.include(\"org.springframework\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Invalid ID format (400)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees/abc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees",
+            "abc"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 400 Bad Request\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"Structured error is returned\", function () {",
+              "    pm.expect(pm.response.json()).to.have.property(\"status\", 400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Delete employee (204)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees/{{employeeId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees",
+            "{{employeeId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 204 No Content\", function () { pm.response.to.have.status(204); });",
+              "pm.test(\"Response body is empty\", function () { pm.expect(pm.response.text()).to.eql(\"\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Verify deleted employee is missing (404)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/employees/{{employeeId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "employees",
+            "{{employeeId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 404 after deletion\", function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
